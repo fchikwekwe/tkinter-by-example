@@ -9,7 +9,7 @@ class GameScreen():
         self.inventory_item = inventory_item
         self.help_text = help_text
 
-    def on_clock(self, event):
+    def on_click(self, event):
         if (self.roi[0] <= event.x <= self.roi[2]
             and self.roi[1] <= event.y <= self.roi[3]):
 
@@ -28,10 +28,10 @@ class Game(tk.Tk):
 
         self.title("Point and Click")
         self.geometry("800x640")
-        self.resizeable(False, False)
+        self.resizable(False, False)
 
-        self.key_image = tk.PhotoImage(file="assets/key.png")
-        self.questions_mark_image = tk.PhotoImage(file="assets/questionmark.png")
+        self.key_image = tk.PhotoImage(file="assets/key.gif")
+        self.questions_mark_image = tk.PhotoImage(file="assets/questionmark.gif")
 
         self.screen = tk.Canvas(self, bg="white", width=500, height=800)
         self.right_frame = tk.Frame(self, width=300, height=800)
@@ -51,4 +51,69 @@ class Game(tk.Tk):
         inventory_space.pack(side=tk.BOTTOM)
         inventory_title.pack(side=tk.BOTTOM, fill=tk.X)
 
-        inventory_slot_1 = tk.Button(inventory_space, image=self.questions_mark_image)
+        inventory_slot_1 = tk.Button(inventory_space, image=self.questions_mark_image, width=50, height=50)
+        inventory_slot_2 = tk.Button(inventory_space, image=self.questions_mark_image, width=50, height=50)
+        inventory_slot_3 = tk.Button(inventory_space, image=self.questions_mark_image, width=50, height=50)
+
+        inventory_slot_1.pack(pady=(40,20), padx=20)
+        inventory_slot_2.pack(pady=20, padx=20)
+        inventory_slot_3.pack(pady=(20,0),padx=20)
+
+        self.inventory_slots.append(inventory_slot_1)
+        self.inventory_slots.append(inventory_slot_2)
+        self.inventory_slots.append(inventory_slot_3)
+
+        self.right_frame.pack(side=tk.RIGHT)
+        self.screen.pack(side=tk.LEFT)
+
+        self.screen.bind("<Button-1>", self.handle_click)
+
+    def handle_click(self, event):
+        self.active_screen.on_click(event)
+
+    def set_game_screens(self, game_screens):
+        self.game_screens = game_screens
+
+    def display_screen(self, game_screen_number):
+        self.active_screen = self.game_screens[game_screen_number]
+        self.screen.delete("all")
+        self.screen.create_image((250,400), image=self.active_screen.image)
+        self.help_var.set(self.active_screen.help_text)
+
+    def show_next_screen(self):
+        self.current_screen_number += 1;
+        if self.current_screen_number < len(self.game_screens):
+            self.display_screen(self.current_screen_number)
+        else:
+            self.screen.delete("all")
+            self.screen.configure(bg="black")
+            self.screen.create_text((250,300), text="You Win!", font=self.success_font, fill="white")
+
+    def add_inventory_item(self, item_name):
+        next_available_inventory_slot = len(self.inventory_slots_in_use)
+        if next_available_inventory_slot < len(self.inventory_slots):
+            next_slot = self.inventory_slots[next_available_inventory_slot]
+
+            if item_name == "key":
+                next_slot.configure(image=self.key_image)
+
+            self.inventory_slots_in_use.append(item_name)
+
+    def play(self):
+        if not self.game_screens:
+            print("No screens added!")
+        else:
+            self.display_screen(0)
+
+if __name__ == "__main__":
+    game = Game()
+
+    scene1 = GameScreen(game, "assets/scene1.gif", (378,135,427,217), "key", "You Need to Leave but the Door is Locked!")
+    scene2 = GameScreen(game, "assets/scene2.gif", (117,54,329,412), None, "You Got the Key!")
+    scene3 = GameScreen(game, "assets/scene3.gif", (117,54,329,412), None, "The Door is Open!")
+
+    all_screens = [scene1, scene2, scene3]
+
+    game.set_game_screens(all_screens)
+    game.play()
+    game.mainloop()
